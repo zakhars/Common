@@ -7,12 +7,25 @@
 #include <iostream>
 #include <string>
 #include <map>
+#include <vector>
 #include <set>
 
-using namespace std;
+template <class T>
+std::ostream& operator << (std::ostream& os, const std::vector<T>& s) {
+    os << "{";
+    bool first = true;
+    for (const auto& x : s) {
+        if (!first) {
+            os << ", ";
+        }
+        first = false;
+        os << x;
+    }
+    return os << "}";
+}
 
 template <class T>
-ostream& operator << (ostream& os, const set<T>& s) {
+std::ostream& operator << (std::ostream& os, const std::set<T>& s) {
     os << "{";
     bool first = true;
     for (const auto& x : s) {
@@ -26,7 +39,7 @@ ostream& operator << (ostream& os, const set<T>& s) {
 }
 
 template <class K, class V>
-ostream& operator << (ostream& os, const map<K, V>& m) {
+std::ostream& operator << (std::ostream& os, const std::map<K, V>& m) {
     os << "{";
     bool first = true;
     for (const auto& kv : m) {
@@ -40,38 +53,40 @@ ostream& operator << (ostream& os, const map<K, V>& m) {
 }
 
 template<class T, class U>
-void AssertEqual(const T& t, const U& u,
-    const string& hint)
-{
+void AssertEqual(const T& t, const U& u, const std::string& hint = {}) {
     if (t != u) {
-        ostringstream os;
-        os << "Assertion failed: " << t << " != " << u
-            << " hint: " << hint;
-        throw runtime_error(os.str());
+        std::ostringstream os;
+        os << "Assertion failed: " << t << " != " << u;
+        if (!hint.empty()) {
+            os << " hint: " << hint;
+        }
+        throw std::runtime_error(os.str());
     }
 }
 
-void Assert(bool b, const string& hint) {
-    AssertEqual(b, true, hint);
-}
+void Assert(bool b, const std::string& hint);
 
 class TestRunner {
 public:
     template <class TestFunc>
-    void RunTest(TestFunc func, const string& test_name) {
+    void RunTest(TestFunc func, const std::string& test_name) {
         try {
             func();
-            cerr << test_name << " OK" << endl;
+            std::cerr << test_name << " OK" << std::endl;
         }
-        catch (runtime_error& e) {
+        catch (std::exception& e) {
             ++fail_count;
-            cerr << test_name << " fail: " << e.what() << endl;
+            std::cerr << test_name << " fail: " << e.what() << std::endl;
+        }
+        catch (...) {
+            ++fail_count;
+            std::cerr << "Unknown exception caught" << std::endl;
         }
     }
 
     ~TestRunner() {
         if (fail_count > 0) {
-            cerr << fail_count << " unit tests failed. Terminate" << endl;
+            std::cerr << fail_count << " unit tests failed. Terminate" << std::endl;
             exit(1);
         }
     }
